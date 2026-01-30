@@ -120,10 +120,10 @@ export default function ShowTask({ task, activities }: Props) {
                         <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
                                 <StatusBadge variant={task.status} size="lg">
-                                    {task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('-', ' ')}
+                                    {(task.status || '').charAt(0).toUpperCase() + (task.status || '').slice(1).replace('-', ' ')}
                                 </StatusBadge>
                                 <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${priorityClass}`}>
-                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                                    {(task.priority || '').charAt(0).toUpperCase() + (task.priority || '').slice(1)} Priority
                                 </span>
                             </div>
                             {task.status === 'draft' && (
@@ -144,7 +144,7 @@ export default function ShowTask({ task, activities }: Props) {
                         <div className="mb-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1.5">
                                 <User className="h-4 w-4" />
-                                <span>Created by {task.creator.name}</span>
+                                <span>Created by {task.creator?.name || 'Unknown'}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Clock className="h-4 w-4" />
@@ -170,7 +170,7 @@ export default function ShowTask({ task, activities }: Props) {
                     </div>
 
                     {/* Assignees */}
-                    {task.assignees.length > 0 && (
+                    {task.assignees && task.assignees.length > 0 && (
                         <div className="rounded-xl border border-border bg-card p-5 md:p-6">
                             <h3 className="mb-4 text-base font-semibold text-foreground">
                                 Assignees

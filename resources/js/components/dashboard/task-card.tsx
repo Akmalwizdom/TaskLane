@@ -86,7 +86,7 @@ export function TaskCard({ task, onClick, className }: TaskCardProps) {
                                 alt={assignee.name}
                             />
                             <AvatarFallback className="text-xs">
-                                {assignee.name
+                                {(assignee.name || '')
                                     .split(' ')
                                     .map((n) => n[0])
                                     .join('')}
