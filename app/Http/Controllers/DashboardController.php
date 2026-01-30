@@ -32,7 +32,10 @@ class DashboardController extends Controller
                 ->map(fn ($task) => [
                     'id' => (string) $task->id,
                     'title' => $task->title,
-                    'submittedBy' => $task->user->name,
+                    'requester' => [
+                        'name' => $task->user->name,
+                        'avatar' => null,
+                    ],
                     'priority' => $task->priority,
                     'submittedAt' => $task->created_at->diffForHumans(),
                     'href' => route('tasks.show', $task),

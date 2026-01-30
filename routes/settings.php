@@ -26,6 +26,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('settings/appearance');
     })->name('appearance.edit');
 
+    Route::get('settings/notifications', function () {
+        return Inertia::render('settings/notifications');
+    })->name('notifications.edit');
+
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
 });
