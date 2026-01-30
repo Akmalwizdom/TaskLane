@@ -13,7 +13,7 @@ import {
     type TaskItem,
 } from '@/components/dashboard';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Users, CheckCircle2, Clock, FileText, Play } from 'lucide-react';
+import { Users, CheckCircle2, Clock, FileText, Play, type LucideIcon } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -38,7 +38,7 @@ interface Props {
 }
 
 // Map icon string to component
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+const iconMap: Record<string, LucideIcon> = {
     Users,
     FileText,
     Clock,

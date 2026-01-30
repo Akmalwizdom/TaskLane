@@ -93,12 +93,14 @@ export default function ShowTask({ task, activities }: Props) {
     } : task.status === 'approved' && task.approver ? {
         status: 'approved',
         approver: { name: task.approver.name },
-        approvedAt: task.approvedAt || undefined,
+        submittedAt: task.createdAt,
+        decidedAt: task.approvedAt || undefined,
     } : task.status === 'rejected' && task.approver ? {
         status: 'rejected',
         approver: { name: task.approver.name },
-        rejectedAt: task.approvedAt || undefined,
-        rejectionReason: task.rejectionReason || undefined,
+        submittedAt: task.createdAt,
+        decidedAt: task.approvedAt || undefined,
+        feedback: task.rejectionReason || undefined,
     } : undefined;
 
     const priorityClass = {

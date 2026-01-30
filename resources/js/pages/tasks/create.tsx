@@ -4,42 +4,25 @@ import type { BreadcrumbItem } from '@/types';
 import { TaskForm, type TaskFormData } from '@/components/tasks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface TeamMember {
-    id: string;
-    name: string;
-    email: string;
-}
-
-interface Props {
-    teamMembers: TeamMember[];
-}
-
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Tasks', href: '/tasks' },
     { title: 'Create Task', href: '/tasks/create' },
 ];
 
-export default function CreateTask({ teamMembers }: Props) {
+export default function CreateTask() {
     const { data, setData, post, processing, errors, reset } = useForm({
         title: '',
         description: '',
         priority: 'medium' as 'low' | 'medium' | 'high',
-        due_date: '',
-        assignee_ids: [] as string[],
+        assigneeId: '',
+        deadline: '',
         action: 'submit' as 'draft' | 'submit',
     });
 
     const handleSubmit = (formData: TaskFormData, action: 'draft' | 'submit') => {
         post('/tasks', {
-            data: {
-                title: formData.title,
-                description: formData.description,
-                priority: formData.priority,
-                due_date: formData.dueDate,
-                assignee_ids: formData.assigneeIds,
-                action: action,
-            },
+            preserveState: true,
             onSuccess: () => {
                 router.visit('/tasks');
             },
@@ -48,6 +31,23 @@ export default function CreateTask({ teamMembers }: Props) {
 
     const handleCancel = () => {
         window.history.back();
+    };
+
+    // Update form data when TaskForm changes
+    const handleFormSubmit = (formData: TaskFormData, action: 'draft' | 'submit') => {
+        // Use router.post for custom data transformation
+        router.post('/tasks', {
+            title: formData.title,
+            description: formData.description,
+            priority: formData.priority,
+            assignee_ids: formData.assigneeId ? [formData.assigneeId] : [],
+            due_date: formData.deadline,
+            action: action,
+        }, {
+            onSuccess: () => {
+                router.visit('/tasks');
+            },
+        });
     };
 
     return (
@@ -65,11 +65,9 @@ export default function CreateTask({ teamMembers }: Props) {
                     </CardHeader>
                     <CardContent>
                         <TaskForm
-                            onSubmit={handleSubmit}
+                            onSubmit={handleFormSubmit}
                             onCancel={handleCancel}
                             isSubmitting={processing}
-                            teamMembers={teamMembers}
-                            errors={errors}
                         />
                     </CardContent>
                 </Card>

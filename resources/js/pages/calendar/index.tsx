@@ -125,7 +125,6 @@ export default function CalendarPage({ tasksByDate, currentMonth, currentYear }:
                                 date={selectedDate}
                                 tasks={panelTasks}
                                 onClose={handleClosePanel}
-                                isLoading={isLoadingTasks}
                             />
                         ) : (
                             <div className="flex h-full min-h-[300px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
