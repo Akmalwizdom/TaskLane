@@ -1,0 +1,204 @@
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useState } from 'react';
+
+export interface TaskFormData {
+    title: string;
+    description: string;
+    assigneeId: string;
+    priority: 'low' | 'medium' | 'high';
+    deadline: string;
+}
+
+interface TaskFormProps {
+    initialData?: Partial<TaskFormData>;
+    onSubmit: (data: TaskFormData, action: 'draft' | 'submit') => void;
+    onCancel?: () => void;
+    isSubmitting?: boolean;
+    className?: string;
+}
+
+const mockAssignees = [
+    { id: '1', name: 'John Doe' },
+    { id: '2', name: 'Jane Smith' },
+    { id: '3', name: 'Alex Brown' },
+    { id: '4', name: 'Emily Wilson' },
+];
+
+export function TaskForm({
+    initialData,
+    onSubmit,
+    onCancel,
+    isSubmitting = false,
+    className,
+}: TaskFormProps) {
+    const [formData, setFormData] = useState<TaskFormData>({
+        title: initialData?.title || '',
+        description: initialData?.description || '',
+        assigneeId: initialData?.assigneeId || '',
+        priority: initialData?.priority || 'medium',
+        deadline: initialData?.deadline || '',
+    });
+
+    const handleChange = (
+        field: keyof TaskFormData,
+        value: string
+    ) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleSubmit = (action: 'draft' | 'submit') => {
+        onSubmit(formData, action);
+    };
+
+    return (
+        <form
+            className={cn('flex flex-col gap-6', className)}
+            onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit('submit');
+            }}
+        >
+            {/* Title */}
+            <div className="flex flex-col gap-2">
+                <Label htmlFor="title" className="text-sm font-medium">
+                    Task Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                    id="title"
+                    placeholder="Enter a clear and descriptive title"
+                    value={formData.title}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    required
+                    className="h-11"
+                />
+            </div>
+
+            {/* Description */}
+            <div className="flex flex-col gap-2">
+                <Label htmlFor="description" className="text-sm font-medium">
+                    Description
+                </Label>
+                <textarea
+                    id="description"
+                    placeholder="Describe the task in detail..."
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    rows={4}
+                    className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                />
+            </div>
+
+            {/* Two Column Grid */}
+            <div className="grid gap-6 sm:grid-cols-2">
+                {/* Assignee */}
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="assignee" className="text-sm font-medium">
+                        Assign To
+                    </Label>
+                    <Select
+                        value={formData.assigneeId}
+                        onValueChange={(value) => handleChange('assigneeId', value)}
+                    >
+                        <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select team member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {mockAssignees.map((assignee) => (
+                                <SelectItem key={assignee.id} value={assignee.id}>
+                                    {assignee.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Priority */}
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="priority" className="text-sm font-medium">
+                        Priority
+                    </Label>
+                    <Select
+                        value={formData.priority}
+                        onValueChange={(value) => handleChange('priority', value as TaskFormData['priority'])}
+                    >
+                        <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="low">
+                                <span className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-success" />
+                                    Low
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="medium">
+                                <span className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-warning" />
+                                    Medium
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="high">
+                                <span className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-destructive" />
+                                    High
+                                </span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            {/* Deadline */}
+            <div className="flex flex-col gap-2">
+                <Label htmlFor="deadline" className="text-sm font-medium">
+                    Deadline
+                </Label>
+                <Input
+                    id="deadline"
+                    type="date"
+                    value={formData.deadline}
+                    onChange={(e) => handleChange('deadline', e.target.value)}
+                    className="h-11"
+                />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
+                {onCancel && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={onCancel}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                )}
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleSubmit('draft')}
+                    disabled={isSubmitting || !formData.title}
+                >
+                    Save as Draft
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={isSubmitting || !formData.title}
+                >
+                    {isSubmitting ? 'Submitting...' : 'Submit for Approval'}
+                </Button>
+            </div>
+        </form>
+    );
+}
