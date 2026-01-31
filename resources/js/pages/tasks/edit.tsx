@@ -1,31 +1,41 @@
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { TaskForm, type TaskFormData } from '@/components/tasks';
+import { TaskForm, type TaskFormData } from '@/components/tasks/task-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Tasks', href: '/tasks' },
-    { title: 'Create Task', href: '/tasks/create' },
-];
+interface TaskData {
+    id: string;
+    title: string;
+    description: string;
+    priority: 'low' | 'medium' | 'high';
+    dueDate: string | null;
+    dueDateFull: string | null;
+    assignees: Array<{ id: string; name: string }>;
+}
 
 interface Props {
+    task: { data: TaskData };
     teamMembers: Array<{ id: string; name: string }>;
     isAdmin: boolean;
 }
 
-export default function CreateTask({ teamMembers, isAdmin }: Props) {
-    const { post, processing } = useForm();
+export default function EditTask({ task, teamMembers, isAdmin }: Props) {
+    const { data: taskData } = task;
+    const { put, processing } = useForm();
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Tasks', href: '/tasks' },
+        { title: 'Edit Task', href: `/tasks/${taskData.id}/edit` },
+    ];
 
     const handleCancel = () => {
         window.history.back();
     };
 
-    // Update form data when TaskForm changes
     const handleFormSubmit = (formData: TaskFormData, action: 'draft' | 'submit' | 'assign') => {
-        // Use router.post for custom data transformation
-        router.post('/tasks', {
+        router.put(`/tasks/${taskData.id}`, {
             title: formData.title,
             description: formData.description,
             priority: formData.priority,
@@ -34,26 +44,38 @@ export default function CreateTask({ teamMembers, isAdmin }: Props) {
             action: action,
         }, {
             onSuccess: () => {
-                router.visit('/tasks');
+                router.visit(`/tasks/${taskData.id}`);
             },
         });
     };
 
+    // Prepare initial data for TaskForm
+    const initialData: Partial<TaskFormData> = {
+        title: taskData.title,
+        description: taskData.description,
+        priority: taskData.priority,
+        deadline: taskData.dueDateFull || '',
+        assigneeId: taskData.assignees && taskData.assignees.length > 0 
+            ? taskData.assignees[0].id.toString() 
+            : '',
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create Task" />
+            <Head title={`Edit - ${taskData.title}`} />
             <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-xl md:text-2xl">
-                            Create New Task
+                            Edit Task
                         </CardTitle>
                         <CardDescription>
-                            Fill in the details below to create a new task. {isAdmin ? 'Assign it to a team member or save as draft.' : 'Save it as a draft or submit it for approval.'}
+                            Update the task details below. {isAdmin ? 'You can re-assign it or save updates.' : 'Save changes or submit for approval.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <TaskForm
+                            initialData={initialData}
                             onSubmit={handleFormSubmit}
                             onCancel={handleCancel}
                             isSubmitting={processing}

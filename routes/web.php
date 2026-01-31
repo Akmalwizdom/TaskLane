@@ -23,6 +23,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('tasks', TaskController::class);
     
     // Task approval workflow
+    Route::post('tasks/{task}/start-work', [TaskController::class, 'startWork'])->name('tasks.startWork');
+    Route::post('tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
     Route::post('tasks/{task}/approve', [TaskController::class, 'approve'])->name('tasks.approve');
     Route::post('tasks/{task}/reject', [TaskController::class, 'reject'])->name('tasks.reject');
     

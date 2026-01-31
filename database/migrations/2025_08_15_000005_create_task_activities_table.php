@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('task_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('type', ['created', 'updated', 'submitted', 'approved', 'rejected', 'comment']);
+            $table->enum('type', ['created', 'updated', 'submitted', 'approved', 'rejected', 'comment', 'assigned', 'started']);
             $table->text('description')->nullable();
             $table->timestamp('created_at')->nullable();
             

@@ -21,10 +21,13 @@ class TaskController extends Controller
     {
         $user = Auth::user();
         
+        // Admin sees all tasks, members see only their own or assigned to them
         $tasks = Task::query()
-            ->where(function ($query) use ($user) {
-                $query->where('user_id', $user->id)
-                    ->orWhereHas('assignees', fn ($q) => $q->where('user_id', $user->id));
+            ->when(!$user->isAdmin(), function ($query) use ($user) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhereHas('assignees', fn ($sub) => $sub->where('user_id', $user->id));
+                });
             })
             ->when(request('search'), function ($query, $search) {
                 $query->where('title', 'ilike', "%{$search}%");
@@ -51,12 +54,16 @@ class TaskController extends Controller
      */
     public function create(): Response
     {
+        $user = Auth::user();
+        
+        // Get team members for assignment
         $teamMembers = User::select('id', 'name', 'email')
             ->where('id', '!=', Auth::id())
             ->get();
 
         return Inertia::render('tasks/create', [
             'teamMembers' => $teamMembers,
+            'isAdmin' => $user->isAdmin(),
         ]);
     }
 
@@ -67,25 +74,43 @@ class TaskController extends Controller
     {
         $validated = $request->validated();
         $action = $validated['action'];
+        $assigneeIds = $validated['assignee_ids'] ?? [];
         unset($validated['action'], $validated['assignee_ids']);
+
+        $user = Auth::user();
+        
+        // Determine initial status based on action and role
+        if ($user->isAdmin() && !empty($assigneeIds) && $action === 'assign') {
+            $status = 'assigned';
+            $activityType = 'assigned';
+        } elseif ($action === 'submit') {
+            $status = 'pending';
+            $activityType = 'submitted';
+        } else {
+            $status = 'draft';
+            $activityType = 'created';
+        }
 
         $task = Auth::user()->tasks()->create([
             ...$validated,
-            'status' => $action === 'submit' ? 'pending' : 'draft',
+            'status' => $status,
         ]);
 
         // Attach assignees
-        if ($request->has('assignee_ids')) {
-            $task->assignees()->attach($request->assignee_ids);
+        if (!empty($assigneeIds)) {
+            $task->assignees()->attach($assigneeIds);
         }
 
         // Log activity
-        $task->logActivity($action === 'submit' ? 'submitted' : 'created');
+        $task->logActivity($activityType);
 
-        return redirect()->route('tasks.index')
-            ->with('success', $action === 'submit' 
-                ? 'Task submitted for approval.' 
-                : 'Task saved as draft.');
+        $message = match($status) {
+            'assigned' => 'Task assigned successfully.',
+            'pending' => 'Task submitted for approval.',
+            default => 'Task saved as draft.',
+        };
+
+        return redirect()->route('tasks.index')->with('success', $message);
     }
 
     /**
@@ -96,6 +121,8 @@ class TaskController extends Controller
         $this->authorize('view', $task);
 
         $task->load(['user', 'assignees', 'approver', 'attachments', 'activities.user']);
+        
+        $user = Auth::user();
 
         return Inertia::render('tasks/show', [
             'task' => new TaskResource($task),
@@ -110,6 +137,13 @@ class TaskController extends Controller
                 'description' => $activity->formatted_description,
                 'time' => $activity->created_at->diffForHumans(),
             ]),
+            'permissions' => [
+                'canUpdate' => $user->can('update', $task),
+                'canDelete' => $user->can('delete', $task),
+                'canStartWork' => $user->can('startWork', $task),
+                'canSubmit' => $user->can('submit', $task),
+                'canApprove' => $user->can('approve', $task),
+            ],
         ]);
     }
 
@@ -127,6 +161,7 @@ class TaskController extends Controller
         return Inertia::render('tasks/edit', [
             'task' => new TaskResource($task),
             'teamMembers' => $teamMembers,
+            'isAdmin' => Auth::user()->isAdmin(),
         ]);
     }
 
@@ -149,7 +184,7 @@ class TaskController extends Controller
         }
 
         // Handle submit action
-        if ($action === 'submit' && $task->status === 'draft') {
+        if ($action === 'submit' && in_array($task->status, ['draft', 'in-progress', 'rejected'])) {
             $task->update(['status' => 'pending']);
             $task->logActivity('submitted');
         } else {
@@ -171,6 +206,34 @@ class TaskController extends Controller
 
         return redirect()->route('tasks.index')
             ->with('success', 'Task deleted successfully.');
+    }
+
+    /**
+     * Start working on the assigned task.
+     */
+    public function startWork(Task $task): RedirectResponse
+    {
+        $this->authorize('startWork', $task);
+
+        $task->update(['status' => 'in-progress']);
+        $task->logActivity('started');
+
+        return redirect()->back()
+            ->with('success', 'You have started working on this task.');
+    }
+
+    /**
+     * Submit the task for review.
+     */
+    public function submit(Task $task): RedirectResponse
+    {
+        $this->authorize('submit', $task);
+
+        $task->update(['status' => 'pending']);
+        $task->logActivity('submitted');
+
+        return redirect()->back()
+            ->with('success', 'Task submitted for review.');
     }
 
     /**

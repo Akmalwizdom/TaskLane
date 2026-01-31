@@ -5,7 +5,7 @@ import { ActivityTimeline, ApprovalSidebar, type ActivityEvent, type ApprovalInf
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Edit2, Paperclip, User } from 'lucide-react';
+import { Calendar, Clock, Edit2, Play, Send, User } from 'lucide-react';
 
 interface Assignee {
     id: string;
@@ -13,11 +13,19 @@ interface Assignee {
     initials: string;
 }
 
+interface Permissions {
+    canUpdate: boolean;
+    canDelete: boolean;
+    canStartWork: boolean;
+    canSubmit: boolean;
+    canApprove: boolean;
+}
+
 interface TaskData {
     id: string;
     title: string;
     description: string;
-    status: 'draft' | 'pending' | 'in-progress' | 'completed' | 'approved' | 'rejected';
+    status: 'draft' | 'assigned' | 'pending' | 'in-progress' | 'completed' | 'approved' | 'rejected';
     priority: 'low' | 'medium' | 'high';
     dueDate: string | null;
     dueDateFull: string | null;
@@ -52,28 +60,40 @@ interface Activity {
 interface Props {
     task: TaskData;
     activities: Activity[];
+    permissions: Permissions;
 }
 
-export default function ShowTask({ task, activities }: Props) {
+export default function ShowTask({ task, activities, permissions }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Tasks', href: '/tasks' },
         { title: task.title, href: '#' },
     ];
 
-    const handleApprove = () => {
-        router.post(`/tasks/${task.id}/approve`, {}, {
-            onSuccess: () => {
-                // Refresh the page
-            },
+    const handleStartWork = () => {
+        router.post(`/tasks/${task.id}/start-work`, {}, {
+            onSuccess: () => {},
         });
     };
 
-    const handleReject = (reason?: string) => {
+    const handleSubmit = () => {
+        router.post(`/tasks/${task.id}/submit`, {}, {
+            onSuccess: () => {},
+        });
+    };
+
+    const handleApprove = () => {
+        router.post(`/tasks/${task.id}/approve`, {}, {
+            onSuccess: () => {},
+        });
+    };
+
+    const handleReject = () => {
+        const reason = window.prompt('Please provide a reason for rejection:');
+        if (reason === null) return; // Cancelled
+
         router.post(`/tasks/${task.id}/reject`, { rejection_reason: reason }, {
-            onSuccess: () => {
-                // Refresh the page
-            },
+            onSuccess: () => {},
         });
     };
 
@@ -107,7 +127,17 @@ export default function ShowTask({ task, activities }: Props) {
         low: 'bg-muted text-muted-foreground',
         medium: 'bg-amber-500/10 text-amber-600',
         high: 'bg-destructive/10 text-destructive',
-    }[task.priority];
+    }[task.priority || 'medium'];
+
+    const statusLabels: Record<string, string> = {
+        draft: 'Draft',
+        assigned: 'Assigned',
+        pending: 'Pending Review',
+        'in-progress': 'In Progress',
+        completed: 'Completed',
+        approved: 'Approved',
+        rejected: 'Rejected',
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -120,20 +150,36 @@ export default function ShowTask({ task, activities }: Props) {
                         <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
                                 <StatusBadge variant={task.status} size="lg">
-                                    {(task.status || '').charAt(0).toUpperCase() + (task.status || '').slice(1).replace('-', ' ')}
+                                    {statusLabels[task.status || 'draft']}
                                 </StatusBadge>
                                 <span className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${priorityClass}`}>
-                                    {(task.priority || '').charAt(0).toUpperCase() + (task.priority || '').slice(1)} Priority
+                                    {(task.priority || 'medium').charAt(0).toUpperCase() + (task.priority || 'medium').slice(1)} Priority
                                 </span>
                             </div>
-                            {task.status === 'draft' && (
-                                <Link href={`/tasks/${task.id}/edit`}>
-                                    <Button variant="outline" size="sm" className="gap-1.5">
-                                        <Edit2 className="h-3.5 w-3.5" />
-                                        Edit
+                            
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2">
+                                {permissions.canUpdate && (
+                                    <Link href={`/tasks/${task.id}/edit`}>
+                                        <Button variant="outline" size="sm" className="gap-1.5">
+                                            <Edit2 className="h-3.5 w-3.5" />
+                                            Edit
+                                        </Button>
+                                    </Link>
+                                )}
+                                {permissions.canStartWork && (
+                                    <Button onClick={handleStartWork} size="sm" className="gap-1.5">
+                                        <Play className="h-3.5 w-3.5" />
+                                        Start Work
                                     </Button>
-                                </Link>
-                            )}
+                                )}
+                                {permissions.canSubmit && (
+                                    <Button onClick={handleSubmit} size="sm" className="gap-1.5">
+                                        <Send className="h-3.5 w-3.5" />
+                                        Submit for Review
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         <h1 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">
@@ -157,6 +203,14 @@ export default function ShowTask({ task, activities }: Props) {
                                 </div>
                             )}
                         </div>
+
+                        {/* Rejection Feedback */}
+                        {task.status === 'rejected' && task.rejectionReason && (
+                            <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                                <h4 className="mb-1 text-sm font-semibold text-destructive">Revision Required</h4>
+                                <p className="text-sm text-muted-foreground">{task.rejectionReason}</p>
+                            </div>
+                        )}
 
                         {/* Description */}
                         {task.description && (
@@ -205,13 +259,13 @@ export default function ShowTask({ task, activities }: Props) {
                 </div>
 
                 {/* Sidebar */}
-                {approvalInfo && (
+                {(approvalInfo || permissions.canApprove) && (
                     <div className="w-full space-y-6 lg:w-80 xl:w-96">
                         <ApprovalSidebar
                             approval={approvalInfo}
                             onApprove={handleApprove}
                             onReject={handleReject}
-                            canApprove={task.status === 'pending'}
+                            canApprove={permissions.canApprove}
                         />
                     </div>
                 )}

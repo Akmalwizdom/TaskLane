@@ -12,6 +12,8 @@ const statusBadgeVariants = cva(
                     'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
                 'in-progress':
                     'bg-info/10 text-info border border-info/20 dark:bg-info/20 dark:border-info/30',
+                assigned:
+                    'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-800',
                 completed:
                     'bg-success/10 text-success border border-success/20 dark:bg-success/20 dark:border-success/30',
                 approved:
@@ -81,6 +83,14 @@ export function InProgressBadge({ className, ...props }: Omit<StatusBadgeProps, 
     return (
         <StatusBadge variant="in-progress" className={className} {...props}>
             In Progress
+        </StatusBadge>
+    );
+}
+
+export function AssignedBadge({ className, ...props }: Omit<StatusBadgeProps, 'variant'>) {
+    return (
+        <StatusBadge variant="assigned" className={className} {...props}>
+            Assigned
         </StatusBadge>
     );
 }

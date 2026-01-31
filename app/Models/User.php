@@ -62,10 +62,11 @@ class User extends Authenticatable
 
     /**
      * Check if user is an approver.
+     * After role simplification, only admins can approve.
      */
     public function isApprover(): bool
     {
-        return $this->role === 'approver' || $this->role === 'admin';
+        return $this->isAdmin();
     }
 
     /**

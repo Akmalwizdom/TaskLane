@@ -18,7 +18,7 @@ export interface ApprovalInfo {
 }
 
 interface ApprovalSidebarProps {
-    approval: ApprovalInfo;
+    approval?: ApprovalInfo;
     onApprove?: () => void;
     onReject?: () => void;
     canApprove?: boolean;
@@ -32,6 +32,8 @@ export function ApprovalSidebar({
     canApprove = false,
     className,
 }: ApprovalSidebarProps) {
+    if (!approval) return null;
+
     return (
         <div
             className={cn(
@@ -63,10 +65,6 @@ export function ApprovalSidebar({
             {approval.approver && (
                 <div className="mb-4 flex items-center gap-3 rounded-lg bg-muted/50 p-3">
                     <Avatar className="h-10 w-10">
-                        <AvatarImage
-                            src={approval.approver.avatar}
-                            alt={approval.approver.name}
-                        />
                         <AvatarFallback>
                             {approval.approver.name
                                 .split(' ')

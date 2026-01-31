@@ -21,21 +21,18 @@ export interface TaskFormData {
 
 interface TaskFormProps {
     initialData?: Partial<TaskFormData>;
-    onSubmit: (data: TaskFormData, action: 'draft' | 'submit') => void;
+    teamMembers?: Array<{ id: string; name: string }>;
+    isAdmin?: boolean;
+    onSubmit: (data: TaskFormData, action: 'draft' | 'submit' | 'assign') => void;
     onCancel?: () => void;
     isSubmitting?: boolean;
     className?: string;
 }
 
-const mockAssignees = [
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-    { id: '3', name: 'Alex Brown' },
-    { id: '4', name: 'Emily Wilson' },
-];
-
 export function TaskForm({
     initialData,
+    teamMembers = [],
+    isAdmin = false,
     onSubmit,
     onCancel,
     isSubmitting = false,
@@ -56,7 +53,7 @@ export function TaskForm({
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = (action: 'draft' | 'submit') => {
+    const handleSubmit = (action: 'draft' | 'submit' | 'assign') => {
         onSubmit(formData, action);
     };
 
@@ -65,7 +62,7 @@ export function TaskForm({
             className={cn('flex flex-col gap-6', className)}
             onSubmit={(e) => {
                 e.preventDefault();
-                handleSubmit('submit');
+                handleSubmit(isAdmin && formData.assigneeId ? 'assign' : 'submit');
             }}
         >
             {/* Title */}
@@ -113,8 +110,8 @@ export function TaskForm({
                             <SelectValue placeholder="Select team member" />
                         </SelectTrigger>
                         <SelectContent>
-                            {mockAssignees.map((assignee) => (
-                                <SelectItem key={assignee.id} value={assignee.id}>
+                            {teamMembers.map((assignee) => (
+                                <SelectItem key={assignee.id} value={assignee.id.toString()}>
                                     {assignee.name}
                                 </SelectItem>
                             ))}
@@ -192,12 +189,21 @@ export function TaskForm({
                 >
                     Save as Draft
                 </Button>
-                <Button
-                    type="submit"
-                    disabled={isSubmitting || !formData.title}
-                >
-                    {isSubmitting ? 'Submitting...' : 'Submit for Approval'}
-                </Button>
+                {isAdmin && formData.assigneeId ? (
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting || !formData.title}
+                    >
+                        {isSubmitting ? 'Assigning...' : 'Assign Task'}
+                    </Button>
+                ) : (
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting || !formData.title}
+                    >
+                        {isSubmitting ? 'Submitting...' : 'Submit for Approval'}
+                    </Button>
+                )}
             </div>
         </form>
     );

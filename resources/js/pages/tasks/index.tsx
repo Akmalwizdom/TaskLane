@@ -43,7 +43,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Tasks', href: '/tasks' },
 ];
 
-type StatusFilter = 'all' | 'draft' | 'pending' | 'in-progress' | 'completed' | 'approved' | 'rejected';
+type StatusFilter = 'all' | 'draft' | 'assigned' | 'pending' | 'in-progress' | 'completed' | 'approved' | 'rejected';
 
 export default function TasksIndex({ tasks, filters }: Props) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
@@ -129,6 +129,7 @@ export default function TasksIndex({ tasks, filters }: Props) {
                         <SelectContent>
                             <SelectItem value="all">All Tasks</SelectItem>
                             <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="assigned">Assigned</SelectItem>
                             <SelectItem value="pending">Pending</SelectItem>
                             <SelectItem value="in-progress">In Progress</SelectItem>
                             <SelectItem value="completed">Completed</SelectItem>
@@ -140,7 +141,7 @@ export default function TasksIndex({ tasks, filters }: Props) {
 
                 {/* Status Pills */}
                 <div className="flex flex-wrap gap-2">
-                    {(['all', 'draft', 'pending', 'in-progress', 'completed', 'approved', 'rejected'] as StatusFilter[]).map(
+                    {(['all', 'draft', 'assigned', 'pending', 'in-progress', 'completed', 'approved', 'rejected'] as StatusFilter[]).map(
                         (status) => (
                             <button
                                 key={status}

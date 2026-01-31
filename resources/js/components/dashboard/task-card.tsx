@@ -6,6 +6,7 @@ import { Link } from '@inertiajs/react';
 
 export type TaskStatus =
     | 'draft'
+    | 'assigned'
     | 'pending'
     | 'in-progress'
     | 'completed'
@@ -34,6 +35,7 @@ interface TaskCardProps {
 
 const statusLabels: Record<TaskStatus, string> = {
     draft: 'Draft',
+    assigned: 'Assigned',
     pending: 'Pending',
     'in-progress': 'In Progress',
     completed: 'Completed',

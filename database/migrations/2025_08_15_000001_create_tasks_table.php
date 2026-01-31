@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title', 255);
             $table->text('description')->nullable();
-            $table->enum('status', ['draft', 'pending', 'in-progress', 'completed', 'approved', 'rejected'])->default('draft');
+            $table->enum('status', ['draft', 'assigned', 'pending', 'in-progress', 'completed', 'approved', 'rejected'])->default('draft');
             $table->enum('priority', ['low', 'medium', 'high'])->default('medium');
             $table->date('due_date')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');

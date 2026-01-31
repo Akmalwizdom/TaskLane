@@ -22,7 +22,7 @@ class TaskPolicy
     {
         return $user->id === $task->user_id 
             || $task->assignees->contains('id', $user->id)
-            || $user->canApprove();
+            || $user->isAdmin();
     }
 
     /**
@@ -30,7 +30,7 @@ class TaskPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return true; // Both admin and members can create tasks
     }
 
     /**
@@ -38,9 +38,13 @@ class TaskPolicy
      */
     public function update(User $user, Task $task): bool
     {
-        // Only creator can update, and only if not approved/rejected
-        return $user->id === $task->user_id 
-            && !in_array($task->status, ['approved', 'rejected']);
+        // Creator can update if not yet approved/rejected
+        // Assignee can update if task is assigned to them and status is 'assigned' or 'in-progress'
+        $isCreator = $user->id === $task->user_id;
+        $isAssignee = $task->assignees->contains('id', $user->id);
+        $isEditable = !in_array($task->status, ['approved', 'rejected', 'pending']);
+        
+        return ($isCreator || $isAssignee) && $isEditable;
     }
 
     /**
@@ -48,8 +52,40 @@ class TaskPolicy
      */
     public function delete(User $user, Task $task): bool
     {
-        // Only creator can delete, and only if draft
-        return $user->id === $task->user_id && $task->status === 'draft';
+        // Only creator can delete, and only if draft or assigned
+        return $user->id === $task->user_id 
+            && in_array($task->status, ['draft', 'assigned']);
+    }
+
+    /**
+     * Determine whether the user can start working on the task.
+     */
+    public function startWork(User $user, Task $task): bool
+    {
+        // Assignee can start work if task is assigned to them
+        return $task->assignees->contains('id', $user->id)
+            && $task->status === 'assigned';
+    }
+
+    /**
+     * Determine whether the user can submit the task for review.
+     */
+    public function submit(User $user, Task $task): bool
+    {
+        // Creator can submit their own draft task
+        // Assignee can submit tasks they're working on
+        $isCreator = $user->id === $task->user_id;
+        $isAssignee = $task->assignees->contains('id', $user->id);
+        
+        if ($isCreator && $task->status === 'draft') {
+            return true;
+        }
+        
+        if ($isAssignee && in_array($task->status, ['assigned', 'in-progress', 'rejected'])) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -57,9 +93,9 @@ class TaskPolicy
      */
     public function approve(User $user, Task $task): bool
     {
-        // Must be approver and task must be pending
-        return $user->canApprove() 
+        // Must be admin, task must be pending, and can't approve own task
+        return $user->isAdmin() 
             && $task->status === 'pending'
-            && $user->id !== $task->user_id; // Can't approve own task
+            && $user->id !== $task->user_id;
     }
 }
