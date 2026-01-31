@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
@@ -352,7 +353,7 @@ export default function ShowTask({ task, activities, permissions }: Props) {
                         <Textarea 
                             placeholder="Reason for rejection..." 
                             value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRejectionReason(e.target.value)}
                             className="min-h-[100px]"
                         />
                     </div>
