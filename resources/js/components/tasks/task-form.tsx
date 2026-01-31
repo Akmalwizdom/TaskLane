@@ -26,6 +26,7 @@ interface TaskFormProps {
     onSubmit: (data: TaskFormData, action: 'draft' | 'submit' | 'assign') => void;
     onCancel?: () => void;
     isSubmitting?: boolean;
+    errors?: Record<string, string>;
     className?: string;
 }
 
@@ -36,6 +37,7 @@ export function TaskForm({
     onSubmit,
     onCancel,
     isSubmitting = false,
+    errors = {},
     className,
 }: TaskFormProps) {
     const [formData, setFormData] = useState<TaskFormData>({
@@ -76,8 +78,11 @@ export function TaskForm({
                     value={formData.title}
                     onChange={(e) => handleChange('title', e.target.value)}
                     required
-                    className="h-11"
+                    className={cn("h-11", errors.title && "border-destructive focus-visible:ring-destructive")}
                 />
+                {errors.title && (
+                    <p className="text-xs font-medium text-destructive">{errors.title}</p>
+                )}
             </div>
 
             {/* Description */}
@@ -91,8 +96,14 @@ export function TaskForm({
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     rows={4}
-                    className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                    className={cn(
+                        "flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+                        errors.description && "border-destructive focus-visible:ring-destructive"
+                    )}
                 />
+                {errors.description && (
+                    <p className="text-xs font-medium text-destructive">{errors.description}</p>
+                )}
             </div>
 
             {/* Two Column Grid */}
@@ -117,6 +128,9 @@ export function TaskForm({
                             ))}
                         </SelectContent>
                     </Select>
+                    {errors.assignee_ids && (
+                        <p className="text-xs font-medium text-destructive">{errors.assignee_ids}</p>
+                    )}
                 </div>
 
                 {/* Priority */}
@@ -152,6 +166,9 @@ export function TaskForm({
                             </SelectItem>
                         </SelectContent>
                     </Select>
+                    {errors.priority && (
+                        <p className="text-xs font-medium text-destructive">{errors.priority}</p>
+                    )}
                 </div>
             </div>
 
@@ -165,8 +182,11 @@ export function TaskForm({
                     type="date"
                     value={formData.deadline}
                     onChange={(e) => handleChange('deadline', e.target.value)}
-                    className="h-11"
+                    className={cn("h-11", errors.due_date && "border-destructive focus-visible:ring-destructive")}
                 />
+                {errors.due_date && (
+                    <p className="text-xs font-medium text-destructive">{errors.due_date}</p>
+                )}
             </div>
 
             {/* Action Buttons */}

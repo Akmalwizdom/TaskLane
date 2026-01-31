@@ -28,7 +28,7 @@ class StoreTaskRequest extends FormRequest
             'due_date' => ['nullable', 'date', 'after:today'],
             'assignee_ids' => ['nullable', 'array'],
             'assignee_ids.*' => ['exists:users,id'],
-            'action' => ['required', 'in:draft,submit'],
+            'action' => ['required', 'in:draft,submit,assign'],
         ];
     }
 

@@ -1,10 +1,22 @@
+import { useState } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import { ActivityTimeline, ApprovalSidebar, type ActivityEvent, type ApprovalInfo } from '@/components/tasks';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Clock, Edit2, Play, Send, User } from 'lucide-react';
 
 interface Assignee {
@@ -65,6 +77,12 @@ interface Props {
 
 export default function ShowTask({ task, activities, permissions }: Props) {
     const { data: taskData } = task;
+    const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+    const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+    const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
+    const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Tasks', href: '/tasks' },
@@ -72,29 +90,33 @@ export default function ShowTask({ task, activities, permissions }: Props) {
     ];
 
     const handleStartWork = () => {
+        setIsStartDialogOpen(false);
         router.post(`/tasks/${taskData.id}/start-work`, {}, {
             onSuccess: () => {},
         });
     };
 
     const handleSubmit = () => {
+        setIsSubmitDialogOpen(false);
         router.post(`/tasks/${taskData.id}/submit`, {}, {
             onSuccess: () => {},
         });
     };
 
     const handleApprove = () => {
+        setIsApproveDialogOpen(false);
         router.post(`/tasks/${taskData.id}/approve`, {}, {
             onSuccess: () => {},
         });
     };
 
     const handleReject = () => {
-        const reason = window.prompt('Please provide a reason for rejection:');
-        if (reason === null) return; // Cancelled
-
-        router.post(`/tasks/${taskData.id}/reject`, { rejection_reason: reason }, {
-            onSuccess: () => {},
+        if (!rejectionReason.trim()) return;
+        setIsRejectDialogOpen(false);
+        router.post(`/tasks/${taskData.id}/reject`, { rejection_reason: rejectionReason }, {
+            onSuccess: () => {
+                setRejectionReason('');
+            },
         });
     };
 
@@ -169,13 +191,13 @@ export default function ShowTask({ task, activities, permissions }: Props) {
                                     </Link>
                                 )}
                                 {permissions.canStartWork && (
-                                    <Button onClick={handleStartWork} size="sm" className="gap-1.5">
+                                    <Button onClick={() => setIsStartDialogOpen(true)} size="sm" className="gap-1.5">
                                         <Play className="h-3.5 w-3.5" />
                                         Start Work
                                     </Button>
                                 )}
                                 {permissions.canSubmit && (
-                                    <Button onClick={handleSubmit} size="sm" className="gap-1.5">
+                                    <Button onClick={() => setIsSubmitDialogOpen(true)} size="sm" className="gap-1.5">
                                         <Send className="h-3.5 w-3.5" />
                                         Submit for Review
                                     </Button>
@@ -264,13 +286,88 @@ export default function ShowTask({ task, activities, permissions }: Props) {
                     <div className="w-full space-y-6 lg:w-80 xl:w-96">
                         <ApprovalSidebar
                             approval={approvalInfo}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
+                            onApprove={() => setIsApproveDialogOpen(true)}
+                            onReject={() => setIsRejectDialogOpen(true)}
                             canApprove={permissions.canApprove}
                         />
                     </div>
                 )}
             </div>
+
+            {/* Confirmation Dialogs */}
+            <AlertDialog open={isStartDialogOpen} onOpenChange={setIsStartDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Start working on this task?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will change the task status to "In Progress" and notify the team.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleStartWork}>Start Work</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Submit task for review?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Your work will be locked and sent to admins for approval.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSubmit}>Submit</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Approve this task?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will mark the task as approved and notify the creator.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleApprove} className="bg-emerald-600 hover:bg-emerald-700">Approve</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reject this task?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Please provide a reason for the rejection so the creator can make improvements.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Textarea 
+                            placeholder="Reason for rejection..." 
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            className="min-h-[100px]"
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setRejectionReason('')}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleReject} 
+                            disabled={!rejectionReason.trim()}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Reject Task
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

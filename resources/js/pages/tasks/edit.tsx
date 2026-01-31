@@ -1,4 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import { TaskForm, type TaskFormData } from '@/components/tasks/task-form';
@@ -22,7 +23,8 @@ interface Props {
 
 export default function EditTask({ task, teamMembers, isAdmin }: Props) {
     const { data: taskData } = task;
-    const { put, processing } = useForm();
+    const { errors } = usePage().props as unknown as { errors: Record<string, string> };
+    const [submitting, setSubmitting] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
@@ -35,6 +37,7 @@ export default function EditTask({ task, teamMembers, isAdmin }: Props) {
     };
 
     const handleFormSubmit = (formData: TaskFormData, action: 'draft' | 'submit' | 'assign') => {
+        setSubmitting(true);
         router.put(`/tasks/${taskData.id}`, {
             title: formData.title,
             description: formData.description,
@@ -46,6 +49,9 @@ export default function EditTask({ task, teamMembers, isAdmin }: Props) {
             onSuccess: () => {
                 router.visit(`/tasks/${taskData.id}`);
             },
+            onFinish: () => {
+                setSubmitting(false);
+            }
         });
     };
 
@@ -78,7 +84,8 @@ export default function EditTask({ task, teamMembers, isAdmin }: Props) {
                             initialData={initialData}
                             onSubmit={handleFormSubmit}
                             onCancel={handleCancel}
-                            isSubmitting={processing}
+                            isSubmitting={submitting}
+                            errors={errors}
                             teamMembers={teamMembers}
                             isAdmin={isAdmin}
                         />

@@ -1,4 +1,5 @@
-import { Head, useForm, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import { TaskForm, type TaskFormData } from '@/components/tasks';
@@ -16,15 +17,15 @@ interface Props {
 }
 
 export default function CreateTask({ teamMembers, isAdmin }: Props) {
-    const { post, processing } = useForm();
+    const { errors } = usePage().props as unknown as { errors: Record<string, string> };
+    const [submitting, setSubmitting] = useState(false);
 
     const handleCancel = () => {
         window.history.back();
     };
 
-    // Update form data when TaskForm changes
     const handleFormSubmit = (formData: TaskFormData, action: 'draft' | 'submit' | 'assign') => {
-        // Use router.post for custom data transformation
+        setSubmitting(true);
         router.post('/tasks', {
             title: formData.title,
             description: formData.description,
@@ -36,6 +37,9 @@ export default function CreateTask({ teamMembers, isAdmin }: Props) {
             onSuccess: () => {
                 router.visit('/tasks');
             },
+            onFinish: () => {
+                setSubmitting(false);
+            }
         });
     };
 
@@ -56,7 +60,8 @@ export default function CreateTask({ teamMembers, isAdmin }: Props) {
                         <TaskForm
                             onSubmit={handleFormSubmit}
                             onCancel={handleCancel}
-                            isSubmitting={processing}
+                            isSubmitting={submitting}
+                            errors={errors}
                             teamMembers={teamMembers}
                             isAdmin={isAdmin}
                         />
